@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>深呼吸 4-7-8</title>
+  <style>
+    :root {
+      --bg-from: rgba(15, 32, 60, 0.88);
+      --bg-to: rgba(40, 70, 110, 0.88);
+      --inhale: #6ec6ff;
+      --hold:   #a78bfa;
+      --exhale: #5eead4;
+      --text:   #f5f7fb;
+      --muted:  rgba(245, 247, 251, 0.65);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+                   "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      color: var(--text);
+      user-select: none;
+      cursor: default;
+    }
+
+    /* ウィンドウ全体 = ドラッグできる「枠」 */
+    .frame {
+      -webkit-app-region: drag;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 24px;
+      background: linear-gradient(160deg, var(--bg-from), var(--bg-to));
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px 18px;
+    }
+
+    /* クリックできる要素は no-drag に */
+    button, .controls, .close-btn {
+      -webkit-app-region: no-drag;
+    }
+
+    .header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .title {
+      font-weight: 600;
+    }
+
+    .close-btn {
+      width: 18px; height: 18px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      color: var(--text);
+      font-size: 11px;
+      line-height: 18px;
+      text-align: center;
+      cursor: pointer;
+      padding: 0;
+    }
+    .close-btn:hover { background: rgba(255,255,255,0.25); }
+
+    /* 呼吸の円 */
+    .breath-area {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .ring {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+
+    .circle {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, var(--inhale), rgba(110,198,255,0.2));
+      box-shadow: 0 0 40px rgba(110,198,255,0.55);
+      transition: transform linear, background 0.6s ease, box-shadow 0.6s ease;
+      transform: scale(0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: var(--text);
+    }
+
+    .phase {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+    }
+
+    .count {
+      font-size: 28px;
+      font-weight: 300;
+      margin-top: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* フェーズごとの色 */
+    .circle.inhale {
+      background: radial-gradient(circle at 30% 30%, var(--inhale), rgba(110,198,255,0.2));
+      box-shadow: 0 0 50px rgba(110,198,255,0.6);
+    }
+    .circle.hold {
+      background: radial-gradient(circle at 30% 30%, var(--hold), rgba(167,139,250,0.2));
+      box-shadow: 0 0 50px rgba(167,139,250,0.55);
+    }
+    .circle.exhale {
+      background: radial-gradient(circle at 30% 30%, var(--exhale), rgba(94,234,212,0.2));
+      box-shadow: 0 0 50px rgba(94,234,212,0.55);
+    }
+
+    .footer {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .cycle {
+      letter-spacing: 0.06em;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      background: rgba(255,255,255,0.12);
+      color: var(--text);
+      border: none;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    .btn:hover { background: rgba(255,255,255,0.22); }
+    .btn.primary { background: rgba(110,198,255,0.35); }
+    .btn.primary:hover { background: rgba(110,198,255,0.5); }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <div class="header">
+      <span class="title">深呼吸 · 4-7-8</span>
+      <button class="close-btn" id="closeBtn" title="閉じる">×</button>
+    </div>
+
+    <div class="breath-area">
+      <div class="ring"></div>
+      <div class="circle inhale" id="circle">
+        <div class="phase" id="phase">準備</div>
+        <div class="count" id="count">—</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span class="cycle" id="cycle">サイクル 0</span>
+      <div class="controls">
+        <button class="btn primary" id="startBtn">スタート</button>
+        <button class="btn" id="resetBtn">リセット</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 4-7-8 法
+    const PHASES = [
+      { key: 'inhale', label: '吸う',   seconds: 4, scale: 1.0 },  // 大きく
+      { key: 'hold',   label: '止める', seconds: 7, scale: 1.0 },  // そのまま
+      { key: 'exhale', label: '吐く',   seconds: 8, scale: 0.55 }  // 小さく
+    ];
+
+    const circle  = document.getElementById('circle');
+    const phaseEl = document.getElementById('phase');
+    const countEl = document.getElementById('count');
+    const cycleEl = document.getElementById('cycle');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const closeBtn = document.getElementById('closeBtn');
+
+    let running = false;
+    let phaseIdx = 0;
+    let cycleCount = 0;
+    let phaseStart = 0;
+    let rafId = null;
+
+    function setPhaseVisual(phase) {
+      circle.classList.remove('inhale', 'hold', 'exhale');
+      circle.classList.add(phase.key);
+      // 円の拡大縮小をフェーズの長さでアニメーション
+      circle.style.transition = `transform ${phase.seconds}s ease-in-out, background 0.6s ease, box-shadow 0.6s ease`;
+      // 次フレームで scale を適用してアニメーションを起動
+      requestAnimationFrame(() => {
+        circle.style.transform = `scale(${phase.scale})`;
+      });
+      phaseEl.textContent = phase.label;
+    }
+
+    function tick(now) {
+      if (!running) return;
+      const phase = PHASES[phaseIdx];
+      const elapsed = (now - phaseStart) / 1000;
+      const remaining = Math.max(0, phase.seconds - elapsed);
+      countEl.textContent = Math.ceil(remaining);
+
+      if (elapsed >= phase.seconds) {
+        // 次のフェーズへ
+        phaseIdx = (phaseIdx + 1) % PHASES.length;
+        if (phaseIdx === 0) {
+          cycleCount += 1;
+          cycleEl.textContent = `サイクル ${cycleCount}`;
+        }
+        phaseStart = performance.now();
+        setPhaseVisual(PHASES[phaseIdx]);
+      }
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function start() {
+      if (running) return;
+      running = true;
+      phaseIdx = 0;
+      phaseStart = performance.now();
+      // 最初は小さい状態から始める
+      circle.style.transition = 'none';
+      circle.style.transform = 'scale(0.55)';
+      requestAnimationFrame(() => {
+        setPhaseVisual(PHASES[0]);
+        rafId = requestAnimationFrame(tick);
+      });
+      startBtn.textContent = '一時停止';
+    }
+
+    function pause() {
+      running = false;
+      if (rafId) cancelAnimationFrame(rafId);
+      startBtn.textContent = '再開';
+    }
+
+    function reset() {
+      running = false;
+      if (rafId) cancelAnimationFrame(rafId);
+      phaseIdx = 0;
+      cycleCount = 0;
+      cycleEl.textContent = 'サイクル 0';
+      phaseEl.textContent = '準備';
+      countEl.textContent = '—';
+      circle.classList.remove('inhale', 'hold', 'exhale');
+      circle.classList.add('inhale');
+      circle.style.transition = 'transform 0.5s ease';
+      circle.style.transform = 'scale(0.55)';
+      startBtn.textContent = 'スタート';
+    }
+
+    startBtn.addEventListener('click', () => {
+      if (!running && startBtn.textContent === 'スタート') {
+        start();
+      } else if (running) {
+        pause();
+      } else {
+        // 再開
+        running = true;
+        const phase = PHASES[phaseIdx];
+        // 残り時間から phaseStart を逆算
+        const remaining = parseInt(countEl.textContent, 10) || phase.seconds;
+        phaseStart = performance.now() - (phase.seconds - remaining) * 1000;
+        rafId = requestAnimationFrame(tick);
+        startBtn.textContent = '一時停止';
+      }
+    });
+
+    resetBtn.addEventListener('click', reset);
+
+    closeBtn.addEventListener('click', () => {
+      if (window.appAPI && window.appAPI.quit) {
+        window.appAPI.quit();
+      } else {
+        window.close();
+      }
+    });
+  </script>
+</body>
+</html>

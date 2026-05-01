@@ -1,0 +1,14 @@
+{
+  "name": "breathe-478",
+  "version": "1.0.0",
+  "description": "4-7-8法でゆっくり深呼吸するためのfloating macアプリ",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "Tsubasa",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^31.0.0"
+  }
+}
